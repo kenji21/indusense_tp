@@ -2,6 +2,7 @@
 import mlflow
 import numpy as np
 import tensorflow as tf
+from codecarbon import OfflineEmissionsTracker
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -31,13 +32,17 @@ def ssim_loss(y_true, y_pred):
 
 def train_autoencoder(autoencoder, X_train, latent_shape, ratio, experiment_name, run_name,
                        epochs=80, batch_size=16, patience=4, min_delta=1e-3,
-                       validation_split=0.2, tracking_uri='sqlite:///mlflow.db'):
+                       validation_split=0.2, tracking_uri='sqlite:///mlflow.db',
+                       emissions_output_file='emissions-autoencodeur.csv', country_iso_code='FRA'):
     """Entraîne l'auto-encodeur (perte SSIM) avec early stopping, et journalise l'entraînement dans MLflow.
 
     Arrête l'entraînement si val_loss ne s'améliore plus d'au moins min_delta pendant patience époques.
     Sans min_delta, un nouveau record de +0.0001 compte comme une "amélioration" et remet le compteur à
     zéro indéfiniment. restore_best_weights ramène le modèle à l'époque où val_loss était la meilleure,
     pas la dernière.
+
+    L'entraînement (le `fit`) est instrumenté avec CodeCarbon : kWh et gCO₂eq sont écrits dans
+    `emissions_output_file` et journalisés dans MLflow.
     """
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(experiment_name)
@@ -64,6 +69,13 @@ def train_autoencoder(autoencoder, X_train, latent_shape, ratio, experiment_name
             'compression_ratio': round(float(ratio), 4),
         })
 
+        tracker = OfflineEmissionsTracker(
+            project_name=run_name,
+            output_file=emissions_output_file,
+            country_iso_code=country_iso_code,
+            log_level='error',
+        )
+        tracker.start()
         history = autoencoder.fit(
             X_train, X_train,
             validation_split=validation_split,
@@ -73,7 +85,12 @@ def train_autoencoder(autoencoder, X_train, latent_shape, ratio, experiment_name
             callbacks=[early_stopping],
             verbose=2,
         )
+        emissions_kg = tracker.stop()
 
+        mlflow.log_metrics({
+            'emissions_kg_co2eq': emissions_kg,
+            'energy_consumed_kwh': tracker.final_emissions_data.energy_consumed,
+        })
         mlflow.log_param('stopped_epoch', early_stopping.stopped_epoch or len(history.history['loss']))
         for epoch, (loss, val_loss) in enumerate(zip(history.history['loss'], history.history['val_loss'])):
             mlflow.log_metrics({'loss': loss, 'val_loss': val_loss}, step=epoch)
