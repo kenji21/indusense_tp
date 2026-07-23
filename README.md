@@ -32,3 +32,13 @@ uv run jupyter lab
 ```bash
 uv run jupyter nbconvert --to notebook --execute --inplace 01_maintenance_ml.ipynb
 ```
+
+## Suivi des expériences avec MLflow
+
+Les entraînements sont journalisés dans une base SQLite locale (`mlflow.db`). Pour ouvrir l'UI MLflow :
+
+```bash
+uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+
+Puis ouvrir [http://localhost:5000](http://localhost:5000) dans le navigateur.
