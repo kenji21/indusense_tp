@@ -1,10 +1,13 @@
 """Auto-encodeur convolutionnel pour la détection d'anomalies par erreur de reconstruction."""
-import mlflow
+# TensorFlow doit être importé avant mlflow : dans l'autre ordre, le premier op TensorFlow exécuté
+# (predict/fit) reste bloqué indéfiniment hors notebook (conflit d'initialisation TF/gRPC).
 import numpy as np
 import tensorflow as tf
-from codecarbon import OfflineEmissionsTracker
 from tensorflow import keras
 from tensorflow.keras import layers
+
+import mlflow
+from codecarbon import OfflineEmissionsTracker
 
 
 def build_autoencoder(input_shape, name='autoencodeur_screw'):

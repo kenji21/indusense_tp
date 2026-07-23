@@ -1,13 +1,17 @@
 """Évaluation partagée entre les approches (ROC, matrice de confusion, analyse des faux négatifs)."""
 from collections import Counter
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import ConfusionMatrixDisplay, auc, confusion_matrix, roc_curve
 
 
-def plot_roc_and_confusion(y_true, y_score, threshold, threshold_label, precision=3):
-    """Courbe ROC (avec AUROC) puis matrice de confusion au seuil donné. Retourne (roc_auc, y_pred)."""
+def plot_roc_and_confusion(y_true, y_score, threshold, threshold_label, precision=3, save_dir=None):
+    """Courbe ROC (avec AUROC) puis matrice de confusion au seuil donné. Retourne (roc_auc, y_pred).
+
+    Si `save_dir` est fourni, sauvegarde `roc_curve.png` et `confusion_matrix.png` dans ce dossier
+    (utile pour une pipeline non interactive)."""
     fpr, tpr, _ = roc_curve(y_true, y_score)
     roc_auc = auc(fpr, tpr)
 
@@ -19,6 +23,8 @@ def plot_roc_and_confusion(y_true, y_score, threshold, threshold_label, precisio
     plt.title('Courbe ROC (saines vs défauts, test)')
     plt.legend()
     plt.tight_layout()
+    if save_dir is not None:
+        plt.savefig(Path(save_dir) / 'roc_curve.png', dpi=150, bbox_inches='tight')
     plt.show()
 
     y_pred = (y_score > threshold).astype(int)
@@ -27,6 +33,8 @@ def plot_roc_and_confusion(y_true, y_score, threshold, threshold_label, precisio
     ConfusionMatrixDisplay(cm, display_labels=['saine', 'défaut']).plot(cmap='Blues')
     plt.title(f'Matrice de confusion ({threshold_label} = {threshold:.{precision}f})')
     plt.tight_layout()
+    if save_dir is not None:
+        plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=150, bbox_inches='tight')
     plt.show()
 
     return roc_auc, y_pred

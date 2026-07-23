@@ -16,10 +16,12 @@ def plot_score_histogram(scores, threshold, title, xlabel, threshold_label, colo
     plt.show()
 
 
-def plot_image_grid(rows, suptitle, col_titles=None, row_labels=None, cmaps=None, figsize_per_cell=3):
+def plot_image_grid(rows, suptitle, col_titles=None, row_labels=None, cmaps=None, figsize_per_cell=3,
+                     save_path=None):
     """Grille d'images : `rows` est une liste de lignes, chaque ligne une liste d'images (une image par
     colonne). `col_titles` étiquette les colonnes (affiché sur la première ligne uniquement),
     `row_labels` étiquette chaque ligne (ylabel), `cmaps` fixe la colormap par colonne (gris par défaut).
+    Si `save_path` est fourni, sauvegarde la figure à ce chemin (utile pour une pipeline non interactive).
     """
     n_rows, n_cols = len(rows), len(rows[0])
     cmaps = cmaps or ['gray'] * n_cols
@@ -42,4 +44,6 @@ def plot_image_grid(rows, suptitle, col_titles=None, row_labels=None, cmaps=None
 
     fig.suptitle(suptitle)
     fig.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.show()

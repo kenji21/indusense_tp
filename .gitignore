@@ -1,2 +1,6 @@
 deep-learning/screw.tar.xz
 mlruns/
+models/
+reports/
+emissions-autoencodeur.csv
+__pycache__/
